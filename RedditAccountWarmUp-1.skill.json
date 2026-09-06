@@ -1,0 +1,307 @@
+{
+  "package_type": "tobub_skill",
+  "manifest_version": 1,
+  "package_id": "user:user_1784993996111_7lsl84@1",
+  "package_version": "1",
+  "source": "user",
+  "created_at": "2026-07-25T15:39:56.111Z",
+  "requirements": {
+    "platform": "required",
+    "rule": "required"
+  },
+  "skill": {
+    "market_skill_id": "user_1784993996111_7lsl84",
+    "release_id": "user_1784993996111_7lsl84",
+    "name": "RedditAccountWarmUp",
+    "source_type": "local",
+    "skill_code": "await tobub.adapter.bootstrap();\n\nawait tobub.adapter.action('pageReady');\n\nconst times = tobub.utils.randInt(1,5) + tobub.params.times;\n\nfor (let i = 0; i < times; i++) {\n  await tobub.adapter.action('watchPostList');\n}\n\n",
+    "platform": "reddit",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "times": {
+          "title": "times",
+          "type": "number"
+        },
+        "viewCommentByCount": {
+          "title": "viewCommentByCount",
+          "type": "number"
+        }
+      },
+      "required": [
+        "times"
+      ],
+      "additionalProperties": true
+    },
+    "output_schema": {},
+    "ui_schema": {
+      "version": 1,
+      "fields": [
+        {
+          "key": "times",
+          "label": "times",
+          "type": "number",
+          "required": true,
+          "default": 10
+        },
+        {
+          "key": "viewCommentByCount",
+          "label": "viewCommentByCount",
+          "type": "number",
+          "required": false,
+          "default": 100
+        }
+      ]
+    },
+    "requirements": {},
+    "defaults": {
+      "params": {
+        "times": 10,
+        "viewCommentByCount": 100
+      },
+      "browser": {
+        "transient": {
+          "locale": "en-US"
+        },
+        "headless": false
+      },
+      "execution": {
+        "domain_mode": "optional"
+      }
+    },
+    "metadata": {}
+  },
+  "platform": {
+    "code": "reddit",
+    "name": "reddit",
+    "version": "1",
+    "base_url": "https://www.reddit.com",
+    "capabilities": [],
+    "domains": [
+      {
+        "domain": "reddit.com",
+        "domain_type": "primary"
+      },
+      {
+        "domain": "http",
+        "domain_type": "primary"
+      }
+    ],
+    "config": {},
+    "definition_hash": "5050a2ddb685e9ee699069529379ca958ffa5d5773498ee82a95eecbdeab0b63"
+  },
+  "rule": {
+    "platform": "reddit",
+    "version": "1.0.0",
+    "schema_version": "1",
+    "hash": "e9126d487a5709b4a85cd5f81094caf49768d0e8bf433b87bbfd436b2aaf7377",
+    "rules": {
+      "platform": "reddit",
+      "version": "1.0.0",
+      "meta": {
+        "name": "reddit",
+        "baseUrl": "https://www.reddit.com",
+        "capabilities": []
+      },
+      "routes": {
+        "home": {
+          "locator": "a#reddit-logo",
+          "url": "https://www.reddit.com"
+        }
+      },
+      "extractors": {},
+      "selectors": {
+        "ready": "a#reddit-logo",
+        "postScrollDiv": "div.main-container",
+        "postCommentButton": "a[name=\"comments-action-button\"]",
+        "postLockedBanner": "div[slot=\"post-locked-banner\"]",
+        "viewMoreComments": "faceplate-tracker[noun=\"view_more_comments\"]",
+        "detailBackButton": "pdp-back-button",
+        "detailScrollDiv": "div#subgrid-container"
+      },
+      "actions": {
+        "pageReady": {
+          "steps": [
+            {
+              "atom": "waitFor",
+              "options": {
+                "delay": [
+                  2000,
+                  3500
+                ]
+              }
+            },
+            {
+              "atom": "waitFor",
+              "options": {
+                "selector": "${selectors.ready}",
+                "timeout": 10000,
+                "delay": [
+                  10000,
+                  15500
+                ]
+              }
+            }
+          ]
+        },
+        "postsScroll": {
+          "steps": [
+            {
+              "atom": "scroll",
+              "options": {
+                "mode": "mouse",
+                "distance": [
+                  600,
+                  1000
+                ],
+                "steps": [
+                  8,
+                  15
+                ],
+                "target": {
+                  "selector": "${selectors.postScrollDiv}"
+                }
+              }
+            },
+            {
+              "atom": "waitFor",
+              "options": {
+                "delay": [
+                  3000,
+                  5000
+                ]
+              }
+            }
+          ]
+        },
+        "detailScrollOnce": {
+          "steps": [
+            {
+              "atom": "scroll",
+              "options": {
+                "mode": "mouse",
+                "distance": [
+                  600,
+                  1000
+                ],
+                "steps": [
+                  8,
+                  15
+                ],
+                "target": {
+                  "selector": "${selectors.detailScrollDiv}"
+                }
+              }
+            },
+            {
+              "atom": "waitFor",
+              "options": {
+                "delay": [
+                  3000,
+                  5000
+                ]
+              }
+            },
+            {
+              "atom": "click",
+              "options": {
+                "selector": "${selectors.viewMoreComments}"
+              },
+              "when": {
+                "all": [
+                  {
+                    "selector": "${selectors.postLockedBanner}",
+                    "state": "hidden"
+                  },
+                  {
+                    "selector": "${selectors.viewMoreComments}",
+                    "state": "visible"
+                  }
+                ]
+              },
+              "onFailure": {
+                "policy": "continue"
+              }
+            }
+          ]
+        },
+        "watchPostComments": {
+          "steps": [
+            {
+              "atom": "click",
+              "options": {
+                "selector": "${selectors.postCommentButton}",
+                "timeout": 3500,
+                "visibleOnly": true,
+                "where": {
+                  "selector": "faceplate-number",
+                  "source": "attr",
+                  "attr": "number",
+                  "type": "number",
+                  "gt": 100
+                }
+              },
+              "probability": 0.9
+            },
+            {
+              "atom": "waitFor",
+              "options": {
+                "selector": "${selectors.detailBackButton}",
+                "selectorState": "visible",
+                "timeout": 10000
+              }
+            },
+            {
+              "action": "detailScrollOnce",
+              "repeat": {
+                "min": 5,
+                "max": 20
+              },
+              "when": {
+                "selector": "div[slot=\"post-locked-banner\"]",
+                "state": "hidden"
+              },
+              "onFailure": {
+                "policy": "continue"
+              }
+            },
+            {
+              "atom": "click",
+              "options": {
+                "selector": "${selectors.detailBackButton}",
+                "timeout": 10000
+              },
+              "when": {
+                "selector": "${selectors.detailBackButton}",
+                "state": "visible"
+              }
+            }
+          ]
+        },
+        "watchPostList": {
+          "steps": [
+            {
+              "action": "postsScroll"
+            },
+            {
+              "atom": "waitFor",
+              "options": {
+                "delay": [
+                  30000,
+                  50000
+                ]
+              },
+              "probability": 0.05
+            },
+            {
+              "action": "watchPostComments",
+              "onFailure": {
+                "policy": "continue"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
