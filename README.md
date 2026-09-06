@@ -64,10 +64,6 @@ Tobub provides:
 - Parallel execution
 - Plugin architecture
 
-Learn more:
-
-https://www.github.com/pow505/tobub
-
 ---
 
 ## Installation
