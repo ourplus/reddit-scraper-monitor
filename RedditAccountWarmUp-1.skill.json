@@ -1,0 +1,444 @@
+{
+  "created_at": "2026-07-25T15:39:56.111Z",
+  "manifest_version": 1,
+  "package_id": "user:user_1784993996111_7lsl84@1",
+  "package_type": "tobub_skill",
+  "package_version": "1",
+  "requirements": {
+    "platform": "required",
+    "rule": "required"
+  },
+  "skill": {
+    "market_skill_id": "user_1784993996111_7lsl84",
+    "release_id": "user_1784993996111_7lsl84",
+    "name": "RedditAccountWarmUp",
+    "source_type": "local",
+    "skill_code": "const durationMinutes = tobub.params.minutes ?? 5;\nconst deadline = Date.now() + durationMinutes * 60 * 1000;\n\nawait tobub.adapter.bootstrap();\n\nconst result = await tobub.atoms.condition({ type: 'visible',throwOnTimeout: false, selector: \"text=You've been blocked by network security\" },{timeout:2000});\nif (result.satisfied) await tobub.atoms.refresh({ waitUntil: 'domcontentloaded' });\n\nwhile (Date.now() < deadline) {\n  await tobub.adapter.action('watchPostList');\n}\n\n",
+    "platform": "reddit",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "minutes": {
+          "title": "minutes",
+          "type": "number"
+        }
+      },
+      "additionalProperties": true
+    },
+    "output_schema": {},
+    "ui_schema": {
+      "version": 1,
+      "fields": [
+        {
+          "default": 5,
+          "key": "minutes",
+          "label": "minutes",
+          "required": false,
+          "type": "number"
+        }
+      ]
+    },
+    "requirements": {},
+    "defaults": {
+      "params": {
+        "minutes": 5,
+        "times": 5
+      },
+      "browser": {
+        "headless": false
+      },
+      "execution": {
+        "domain_mode": "optional"
+      }
+    },
+    "metadata": {}
+  },
+  "source": "user",
+  "platform": {
+    "code": "reddit",
+    "name": "reddit",
+    "version": "1",
+    "base_url": "https://www.reddit.com",
+    "capabilities": [],
+    "domains": [
+      {
+        "domain": "reddit.com",
+        "domain_type": "primary"
+      },
+      {
+        "domain": "http",
+        "domain_type": "primary"
+      }
+    ],
+    "config": {},
+    "definition_hash": "5050a2ddb685e9ee699069529379ca958ffa5d5773498ee82a95eecbdeab0b63"
+  },
+  "rule": {
+    "platform": "reddit",
+    "version": "1.0.0",
+    "schema_version": "1",
+    "hash": "c42b5e1191f30a9c412409274ad569d614f99f30d258513a63ed4b2fc13becd7",
+    "rules": {
+      "actions": {
+        "detailScrollOnce": {
+          "steps": [
+            {
+              "atom": "scroll",
+              "options": {
+                "distance": [
+                  600,
+                  1000
+                ],
+                "mode": "mouse",
+                "steps": [
+                  8,
+                  15
+                ],
+                "target": "${selectors.detailScrollDiv}"
+              }
+            },
+            {
+              "atom": "waitFor",
+              "options": {
+                "delay": [
+                  3000,
+                  5000
+                ]
+              }
+            },
+            {
+              "atom": "click",
+              "onFailure": {
+                "policy": "continue"
+              },
+              "options": {
+                "selector": "${selectors.viewMoreComments}"
+              },
+              "when": {
+                "all": [
+                  {
+                    "selector": "${selectors.postLockedBanner}",
+                    "state": "hidden"
+                  },
+                  {
+                    "selector": "${selectors.viewMoreComments}",
+                    "state": "visible"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "goSort": {
+          "steps": [
+            {
+              "atom": "click",
+              "options": {
+                "selector": "${selectors.postSortButton}"
+              },
+              "timeout": 10000
+            },
+            {
+              "atom": "click",
+              "options": {
+                "selector": "shreddit-sort-dropdown[telemetry-source='sort_switch'] div[slot='dropdown-items'] data[value='NEW']"
+              },
+              "timeout": 10000
+            }
+          ]
+        },
+        "postsScroll": {
+          "steps": [
+            {
+              "atom": "scroll",
+              "options": {
+                "distance": [
+                  600,
+                  1000
+                ],
+                "mode": "mouse",
+                "steps": [
+                  8,
+                  15
+                ],
+                "target": "${selectors.postScrollDiv}"
+              }
+            },
+            {
+              "atom": "waitFor",
+              "options": {
+                "delay": [
+                  1000,
+                  5000
+                ]
+              }
+            }
+          ]
+        },
+        "watchPostComments": {
+          "steps": [
+            {
+              "atom": "click",
+              "options": {
+                "selector": "${selectors.postCommentButton}",
+                "visibleOnly": true,
+                "where": {
+                  "attr": "number",
+                  "gt": 10,
+                  "selector": "faceplate-number",
+                  "source": "attr",
+                  "type": "number"
+                }
+              },
+              "probability": 0.5,
+              "timeout": 3500
+            },
+            {
+              "atom": "waitFor",
+              "options": {
+                "selector": "${selectors.detailBackButton}",
+                "selectorState": "visible"
+              },
+              "timeout": 10000
+            },
+            {
+              "action": "detailScrollOnce",
+              "onFailure": {
+                "policy": "continue"
+              },
+              "repeat": {
+                "max": 20,
+                "min": 5
+              },
+              "when": {
+                "selector": "div[slot=\"post-locked-banner\"]",
+                "state": "hidden"
+              }
+            },
+            {
+              "atom": "click",
+              "options": {
+                "selector": "${selectors.detailBackButton}"
+              },
+              "timeout": 10000,
+              "when": {
+                "selector": "${selectors.detailBackButton}",
+                "state": "visible"
+              }
+            }
+          ]
+        },
+        "watchPostList": {
+          "steps": [
+            {
+              "action": "postsScroll"
+            },
+            {
+              "atom": "waitFor",
+              "options": {
+                "delay": [
+                  30000,
+                  50000
+                ]
+              },
+              "probability": 0.006666666666666667
+            }
+          ]
+        }
+      },
+      "extractors": {
+        "comment_list": {
+          "dedupe": "field",
+          "fields": [
+            {
+              "name": "postId",
+              "source": {
+                "attr": "thingid"
+              }
+            },
+            {
+              "name": "author",
+              "source": {
+                "attr": "author"
+              }
+            },
+            {
+              "name": "time",
+              "source": {
+                "attr": "created"
+              }
+            },
+            {
+              "name": "content",
+              "selector": "details div[slot=\"comment\"]",
+              "source": "text"
+            },
+            {
+              "name": "likes",
+              "selector": "div[data-testid=\"seeker-action-row\"] faceplate-number[number]",
+              "source": {
+                "attr": "number"
+              }
+            }
+          ],
+          "idField": "postId",
+          "itemSelector": "shreddit-comment",
+          "maxItems": 1000,
+          "scan": {
+            "mode": "rescan",
+            "scope": "viewport-buffer",
+            "viewportBufferScreens": 2
+          }
+        },
+        "fetchPostInfo": {
+          "fields": [
+            {
+              "name": "postId",
+              "source": {
+                "attr": "id"
+              }
+            },
+            {
+              "name": "author",
+              "source": {
+                "attr": "author"
+              }
+            },
+            {
+              "name": "title",
+              "source": {
+                "attr": "post-title"
+              }
+            }
+          ],
+          "itemSelector": "shreddit-post[view-context=\"CommentsPage\"]"
+        },
+        "post_list": {
+          "dedupe": "field",
+          "fields": [
+            {
+              "name": "postId",
+              "source": {
+                "attr": "data-post-id"
+              }
+            },
+            {
+              "name": "author",
+              "selector": "span[slot=\"authorName\"] span[dir=\"auto\"]",
+              "source": "text"
+            },
+            {
+              "name": "url",
+              "selector": "a[slot=\"full-post-link\"]",
+              "source": "href"
+            },
+            {
+              "name": "time",
+              "selector": "time[datetime]",
+              "source": {
+                "attr": "datetime"
+              }
+            },
+            {
+              "name": "title",
+              "selector": "a[slot=\"title\"]",
+              "source": "text"
+            },
+            {
+              "name": "summary",
+              "selector": "shreddit-post-text-body[slot=\"text-body\"]",
+              "source": "text"
+            },
+            {
+              "name": "likes",
+              "selector": "shreddit-vote-animations faceplate-number[number]",
+              "source": {
+                "attr": "number"
+              }
+            },
+            {
+              "name": "comments",
+              "selector": "a[name=\"comments-action-button\"] faceplate-number[number]",
+              "source": {
+                "attr": "number"
+              }
+            }
+          ],
+          "idField": "postId",
+          "itemSelector": "${params.itemSelector}",
+          "maxItems": 1000,
+          "scan": {
+            "mode": "rescan",
+            "scope": "viewport-buffer",
+            "viewportBufferScreens": 2
+          }
+        },
+        "post_search_list": {
+          "fields": [
+            {
+              "name": "obj",
+              "parse": "json",
+              "source": {
+                "attr": "data-faceplate-tracking-context"
+              }
+            },
+            {
+              "name": "url",
+              "selector": "a[data-testid=\"post-title-text\"]",
+              "source": "href"
+            },
+            {
+              "name": "likes",
+              "selector": "div[data-testid=\"search-counter-row\"]  > span:nth-child(1) faceplate-number",
+              "source": {
+                "attr": "number"
+              }
+            },
+            {
+              "name": "comments",
+              "selector": "div[data-testid=\"search-counter-row\"]  > span:nth-child(3) faceplate-number",
+              "source": {
+                "attr": "number"
+              }
+            },
+            {
+              "name": "time",
+              "selector": "div[data-testid=\"sdui-post-unit\"] time[datetime]",
+              "source": {
+                "attr": "datetime"
+              }
+            }
+          ],
+          "idField": "obj.post.id",
+          "itemSelector": "search-telemetry-tracker[consume-events=\"post/consume/post\"]"
+        }
+      },
+      "meta": {
+        "baseUrl": "https://www.reddit.com",
+        "capabilities": [],
+        "name": "reddit"
+      },
+      "platform": "reddit",
+      "routes": {
+        "home": {
+          "locator": "a#reddit-logo",
+          "url": "https://www.reddit.com"
+        },
+        "r": {
+          "url": "https://www.reddit.com/r/${params.subreddit}"
+        }
+      },
+      "selectors": {
+        "detailBackButton": "pdp-back-button",
+        "detailScrollDiv": "div#subgrid-container",
+        "postCommentButton": "a[name=\"comments-action-button\"]",
+        "postLockedBanner": "div[slot=\"post-locked-banner\"]",
+        "postScrollDiv": "div.main-container",
+        "postSortButton": "shreddit-sort-dropdown[telemetry-source=\"sort_switch\"]",
+        "ready": "a#reddit-logo",
+        "viewMoreComments": "faceplate-tracker[noun=\"view_more_comments\"]"
+      },
+      "version": "1.0.0"
+    }
+  }
+}
